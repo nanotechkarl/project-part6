@@ -10,14 +10,8 @@ import {Entity, model, property} from '@loopback/repository';
 })
 export class Users extends Entity {
   @property({
-    type: 'string',
-    id: true,
-    generated: true,
-  })
-  _id?: number;
-
-  @property({
     type: 'number',
+    id: true,
   })
   id?: number;
 
