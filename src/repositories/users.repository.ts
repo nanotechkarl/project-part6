@@ -8,9 +8,7 @@ export class UsersRepository extends DefaultCrudRepository<
   typeof Users.prototype.id,
   UsersRelations
 > {
-  constructor(
-    @inject('datasources.db') dataSource: DbDataSource,
-  ) {
+  constructor(@inject('datasources.db') dataSource: DbDataSource) {
     super(Users, dataSource);
   }
 }

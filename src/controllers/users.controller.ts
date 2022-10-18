@@ -73,16 +73,28 @@ export class UsersController {
   @put('/users/{id}')
   @response(204, {
     description: 'Update user details',
-    content,
+    content: {
+      'application/json': {
+        schema: getModelSchemaRef(Users, {
+          exclude: ['id', 'password'], //REVIEW schema exclusion
+        }),
+      },
+    },
   })
   async replaceById(
     @param.path.number('id') id: number,
     @requestBody({
-      content,
+      content: {
+        'application/json': {
+          schema: getModelSchemaRef(Users, {
+            exclude: ['id', 'password'], //REVIEW schema exclusion
+          }),
+        },
+      },
     })
     users: Users,
   ): Promise<void> {
-    await this.usersRepository.replaceById(id, users);
+    await this.usersRepository.updateById(id, users);
   }
   /* #endregion */
 
