@@ -45,6 +45,7 @@ export class UsersController {
   }
   /* #endregion */
 
+  //DONE
   /* #region  - Get user by ID */
   @get('/users/{id}')
   @response(200, {
@@ -60,7 +61,9 @@ export class UsersController {
     @param.filter(Users, {exclude: 'where'})
     filter?: FilterExcludingWhere<Users>,
   ): Promise<Users> {
-    return this.usersRepository.findById(id, filter);
+    return this.usersRepository.findById(id, filter, {
+      fields: {password: false},
+    });
   }
   /* #endregion */
 
@@ -91,6 +94,7 @@ export class UsersController {
   }
   /* #endregion */
 
+  //DONE
   /* #region  - Register */
   @post('/users')
   @response(200, {
