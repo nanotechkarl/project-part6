@@ -1,4 +1,4 @@
-import {Filter, FilterExcludingWhere, repository} from '@loopback/repository';
+import {repository} from '@loopback/repository';
 import {
   del,
   get,
@@ -27,6 +27,7 @@ export class UsersController {
     public usersRepository: UsersRepository,
   ) {}
 
+  //DONE
   /* #region  - Get all users */
   @get('/users')
   @response(200, {
@@ -35,13 +36,15 @@ export class UsersController {
       'application/json': {
         schema: {
           type: 'array',
-          items: getModelSchemaRef(Users, {includeRelations: true}),
+          items: getModelSchemaRef(Users, {
+            includeRelations: true,
+          }),
         },
       },
     },
   })
-  async find(@param.filter(Users) filter?: Filter<Users>): Promise<Users[]> {
-    return this.usersRepository.find(filter);
+  async find(): Promise<Users[]> {
+    return this.usersRepository.find({fields: {password: false}});
   }
   /* #endregion */
 
@@ -52,16 +55,15 @@ export class UsersController {
     description: 'Users model instance',
     content: {
       'application/json': {
-        schema: getModelSchemaRef(Users, {includeRelations: true}),
+        schema: getModelSchemaRef(Users, {
+          includeRelations: true,
+          exclude: ['password'],
+        }),
       },
     },
   })
-  async findById(
-    @param.path.number('id') id: number,
-    @param.filter(Users, {exclude: 'where'})
-    filter?: FilterExcludingWhere<Users>,
-  ): Promise<Users> {
-    return this.usersRepository.findById(id, filter, {
+  async findById(@param.path.number('id') id: number): Promise<Users> {
+    return this.usersRepository.findById(id, {
       fields: {password: false},
     });
   }
