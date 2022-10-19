@@ -1,13 +1,19 @@
+import {AuthenticationComponent} from '@loopback/authentication';
+import {
+  JWTAuthenticationComponent,
+  UserServiceBindings,
+} from '@loopback/authentication-jwt';
 import {BootMixin} from '@loopback/boot';
 import {ApplicationConfig} from '@loopback/core';
+import {RepositoryMixin} from '@loopback/repository';
+import {RestApplication} from '@loopback/rest';
 import {
   RestExplorerBindings,
   RestExplorerComponent,
 } from '@loopback/rest-explorer';
-import {RepositoryMixin} from '@loopback/repository';
-import {RestApplication} from '@loopback/rest';
 import {ServiceMixin} from '@loopback/service-proxy';
 import path from 'path';
+import {DbDataSource} from './datasources';
 import {MySequence} from './sequence';
 
 export {ApplicationConfig};
@@ -40,5 +46,11 @@ export class LoopBackApp extends BootMixin(
         nested: true,
       },
     };
+
+    // ------ ADD SNIPPET FOR AUTH ---------
+    this.component(AuthenticationComponent);
+    this.component(JWTAuthenticationComponent);
+    this.dataSource(DbDataSource, UserServiceBindings.DATASOURCE_NAME);
+    // ------------- END OF SNIPPET -------------
   }
 }

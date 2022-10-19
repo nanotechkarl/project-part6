@@ -1,3 +1,13 @@
+// ---------- ADD IMPORTS -------------
+import {TokenService} from '@loopback/authentication';
+import {
+  MyUserService,
+  TokenServiceBindings,
+  UserServiceBindings,
+} from '@loopback/authentication-jwt';
+import {inject} from '@loopback/core';
+import {SecurityBindings, securityId, UserProfile} from '@loopback/security';
+// ----------------------------------
 import {repository} from '@loopback/repository';
 import {
   del,
@@ -13,18 +23,16 @@ import {Users} from '../models';
 import {UsersRepository} from '../repositories';
 const bcrypt = require('bcrypt');
 
-const content = {
-  'application/json': {
-    schema: getModelSchemaRef(Users, {
-      exclude: ['id'], //REVIEW schema exclusion
-    }),
-  },
-};
-
 export class UsersController {
   constructor(
+    @inject(TokenServiceBindings.TOKEN_SERVICE)
+    public jwtService: TokenService,
+    @inject(UserServiceBindings.USER_SERVICE)
+    public userService: MyUserService,
+    @inject(SecurityBindings.USER, {optional: true})
+    public user: UserProfile,
     @repository(UsersRepository)
-    public usersRepository: UsersRepository,
+    protected usersRepository: UsersRepository,
   ) {}
 
   //DONE
@@ -69,6 +77,7 @@ export class UsersController {
   }
   /* #endregion */
 
+  //DONE
   /* #region  - Update user details */
   @put('/users/{id}')
   @response(204, {
@@ -98,6 +107,7 @@ export class UsersController {
   }
   /* #endregion */
 
+  //DONE
   /* #region  - Delete user */
   @del('/users/{id}')
   @response(204, {
@@ -110,14 +120,26 @@ export class UsersController {
 
   //DONE
   /* #region  - Register */
-  @post('/users')
+  @post('/register')
   @response(200, {
     description: 'Register',
-    content,
+    content: {
+      'application/json': {
+        schema: getModelSchemaRef(Users, {
+          exclude: ['id'], //REVIEW schema exclusion
+        }),
+      },
+    },
   })
   async create(
     @requestBody({
-      content,
+      content: {
+        'application/json': {
+          schema: getModelSchemaRef(Users, {
+            exclude: ['id'], //REVIEW schema exclusion
+          }),
+        },
+      },
     })
     users: Users,
   ): Promise<Users> {
@@ -138,6 +160,55 @@ export class UsersController {
   /* #endregion */
 
   //login
+  @post('/users/login')
+  @response(200, {
+    description: 'Token',
+    content: {
+      'application/json': {
+        schema: {
+          type: 'object',
+          properties: {
+            token: {
+              type: 'string',
+            },
+          },
+        },
+      },
+    },
+  })
+  async login(
+    @requestBody({
+      content: {
+        'application/json': {
+          schema: getModelSchemaRef(Users, {
+            exclude: ['id', 'fullName'], //REVIEW schema exclusion
+          }),
+        },
+      },
+    })
+    users: Users,
+  ): Promise<{token: string}> {
+    const {email, password} = users;
+    const existingUser = await this.usersRepository.findOne({where: {email}});
+    if (!existingUser) throw new Error('User does not exist in the database');
 
-  //property of logged in
+    const validPassword = await bcrypt.compare(
+      password,
+      existingUser?.password,
+    );
+    if (!validPassword) throw new Error('Wrong password');
+
+    const secId = existingUser?.id?.toString();
+    const user1: UserProfile = {
+      [securityId]: secId ?? '',
+      email: existingUser.email,
+      password: existingUser.password,
+      id: existingUser.id,
+    };
+
+    const token = await this.jwtService.generateToken(user1);
+    return {token};
+  }
+
+  //get user logged in object
 }
