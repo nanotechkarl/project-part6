@@ -23,6 +23,106 @@ import {Users} from '../models';
 import {UsersRepository} from '../repositories';
 const bcrypt = require('bcrypt'); //TODO
 
+/* #region  - request/response schema */
+const requestBodySchema = {
+  register: {
+    content: {
+      'application/json': {
+        schema: getModelSchemaRef(Users, {
+          exclude: ['id'], //REVIEW schema exclusion
+        }),
+      },
+    },
+  },
+  login: {
+    content: {
+      'application/json': {
+        schema: getModelSchemaRef(Users, {
+          exclude: ['id', 'fullName'], //REVIEW schema exclusion
+        }),
+      },
+    },
+  },
+};
+
+const responseSchema = {
+  getAll: {
+    description: 'Array of Users model instances',
+    content: {
+      'application/json': {
+        schema: {
+          type: 'array',
+          items: getModelSchemaRef(Users, {
+            includeRelations: true,
+          }),
+        },
+      },
+    },
+  },
+  getById: {
+    description: 'Users model instance',
+    content: {
+      'application/json': {
+        schema: getModelSchemaRef(Users, {
+          includeRelations: true,
+          exclude: ['password'],
+        }),
+      },
+    },
+  },
+  getUserLoggedIn: {
+    description: 'Users model instance',
+    content: {
+      'application/json': {
+        schema: getModelSchemaRef(Users, {
+          includeRelations: true,
+          exclude: ['password'],
+        }),
+      },
+    },
+  },
+  update: {
+    description: 'Update user details',
+    content: {
+      'application/json': {
+        schema: getModelSchemaRef(Users, {
+          exclude: ['id', 'password'], //REVIEW schema exclusion
+        }),
+      },
+    },
+  },
+  delete: {
+    description: 'Users DELETE success',
+  },
+  register: {
+    description: 'Register',
+    content: {
+      'application/json': {
+        schema: getModelSchemaRef(Users, {
+          exclude: ['id'], //REVIEW schema exclusion
+        }),
+      },
+    },
+  },
+  login: {
+    description: 'Token',
+    content: {
+      'application/json': {
+        schema: {
+          type: 'object',
+          properties: {
+            token: {
+              type: 'string',
+            },
+          },
+        },
+      },
+    },
+  },
+};
+
+/* #endregion */
+
 @authenticate('jwt')
 export class UsersController {
   constructor(
@@ -39,19 +139,7 @@ export class UsersController {
 
   /* #region  - Get all users */
   @get('/users')
-  @response(200, {
-    description: 'Array of Users model instances',
-    content: {
-      'application/json': {
-        schema: {
-          type: 'array',
-          items: getModelSchemaRef(Users, {
-            includeRelations: true,
-          }),
-        },
-      },
-    },
-  })
+  @response(200, responseSchema.getAll)
   async find(): Promise<Users[]> {
     return this.usersRepository.find({fields: {password: false}});
   }
@@ -59,17 +147,7 @@ export class UsersController {
 
   /* #region  - Get user by ID */
   @get('/users/property/{id}')
-  @response(200, {
-    description: 'Users model instance',
-    content: {
-      'application/json': {
-        schema: getModelSchemaRef(Users, {
-          includeRelations: true,
-          exclude: ['password'],
-        }),
-      },
-    },
-  })
+  @response(200, responseSchema.getById)
   async findById(@param.path.number('id') id: number): Promise<Users> {
     return this.usersRepository.findById(id, {
       fields: {password: false},
@@ -79,17 +157,7 @@ export class UsersController {
 
   /* #region  - Get User logged in properties */
   @get('/users/property')
-  @response(200, {
-    description: 'Users model instance',
-    content: {
-      'application/json': {
-        schema: getModelSchemaRef(Users, {
-          includeRelations: true,
-          exclude: ['password'],
-        }),
-      },
-    },
-  })
+  @response(200, responseSchema.getUserLoggedIn)
   async whoAmI(): Promise<Users> {
     return this.usersRepository.findById(parseInt(this.user[securityId]), {
       fields: {password: false},
@@ -99,16 +167,7 @@ export class UsersController {
 
   /* #region  - Update user details */
   @put('/users/{id}')
-  @response(204, {
-    description: 'Update user details',
-    content: {
-      'application/json': {
-        schema: getModelSchemaRef(Users, {
-          exclude: ['id', 'password'], //REVIEW schema exclusion
-        }),
-      },
-    },
-  })
+  @response(204, responseSchema.update)
   async replaceById(
     @param.path.number('id') id: number,
     @requestBody({
@@ -128,9 +187,7 @@ export class UsersController {
 
   /* #region  - Delete user */
   @del('/users/{id}')
-  @response(204, {
-    description: 'Users DELETE success',
-  })
+  @response(204, responseSchema.delete)
   async deleteById(@param.path.number('id') id: number): Promise<void> {
     await this.usersRepository.deleteById(id);
   }
@@ -139,30 +196,11 @@ export class UsersController {
   /* #region  - Register */
   @authenticate.skip()
   @post('/users/register')
-  @response(200, {
-    description: 'Register',
-    content: {
-      'application/json': {
-        schema: getModelSchemaRef(Users, {
-          exclude: ['id'], //REVIEW schema exclusion
-        }),
-      },
-    },
-  })
+  @response(200, responseSchema.register)
   async create(
-    @requestBody({
-      content: {
-        'application/json': {
-          schema: getModelSchemaRef(Users, {
-            exclude: ['id'], //REVIEW schema exclusion
-          }),
-        },
-      },
-    })
-    users: Users,
+    @requestBody(requestBodySchema.register) users: Users,
   ): Promise<Users> {
     const {email, password} = users;
-    //REVIEW Sample use of data querying
     const found = await this.usersRepository.find({where: {email}});
 
     if (found.length) throw new Error('User already exist'); //TODO throw better error
@@ -180,31 +218,9 @@ export class UsersController {
   /* #region  - Login */
   @authenticate.skip()
   @post('/users/login')
-  @response(200, {
-    description: 'Token',
-    content: {
-      'application/json': {
-        schema: {
-          type: 'object',
-          properties: {
-            token: {
-              type: 'string',
-            },
-          },
-        },
-      },
-    },
-  })
+  @response(200, responseSchema.login)
   async login(
-    @requestBody({
-      content: {
-        'application/json': {
-          schema: getModelSchemaRef(Users, {
-            exclude: ['id', 'fullName'], //REVIEW schema exclusion
-          }),
-        },
-      },
-    })
+    @requestBody(requestBodySchema.login)
     users: Users,
   ): Promise<{token: string}> {
     const {email, password} = users;
