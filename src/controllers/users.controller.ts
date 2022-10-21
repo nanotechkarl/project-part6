@@ -1,13 +1,10 @@
-// ---------- ADD IMPORTS -------------
-import {TokenService} from '@loopback/authentication';
+import {authenticate, TokenService} from '@loopback/authentication';
 import {
   MyUserService,
   TokenServiceBindings,
   UserServiceBindings,
 } from '@loopback/authentication-jwt';
 import {inject} from '@loopback/core';
-import {SecurityBindings, securityId, UserProfile} from '@loopback/security';
-// ----------------------------------
 import {repository} from '@loopback/repository';
 import {
   del,
@@ -16,13 +13,17 @@ import {
   param,
   post,
   put,
+  Request,
   requestBody,
   response,
+  RestBindings,
 } from '@loopback/rest';
+import {SecurityBindings, securityId, UserProfile} from '@loopback/security';
 import {Users} from '../models';
 import {UsersRepository} from '../repositories';
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcrypt'); //TODO
 
+@authenticate('jwt')
 export class UsersController {
   constructor(
     @inject(TokenServiceBindings.TOKEN_SERVICE)
@@ -33,9 +34,9 @@ export class UsersController {
     public user: UserProfile,
     @repository(UsersRepository)
     protected usersRepository: UsersRepository,
+    @inject(RestBindings.Http.REQUEST) private request: Request,
   ) {}
 
-  //DONE
   /* #region  - Get all users */
   @get('/users')
   @response(200, {
@@ -56,9 +57,8 @@ export class UsersController {
   }
   /* #endregion */
 
-  //DONE
   /* #region  - Get user by ID */
-  @get('/users/{id}')
+  @get('/users/property/{id}')
   @response(200, {
     description: 'Users model instance',
     content: {
@@ -77,7 +77,26 @@ export class UsersController {
   }
   /* #endregion */
 
-  //DONE
+  /* #region  - Get User logged in properties */
+  @get('/users/property')
+  @response(200, {
+    description: 'Users model instance',
+    content: {
+      'application/json': {
+        schema: getModelSchemaRef(Users, {
+          includeRelations: true,
+          exclude: ['password'],
+        }),
+      },
+    },
+  })
+  async whoAmI(): Promise<Users> {
+    return this.usersRepository.findById(parseInt(this.user[securityId]), {
+      fields: {password: false},
+    });
+  }
+  /* #endregion */
+
   /* #region  - Update user details */
   @put('/users/{id}')
   @response(204, {
@@ -107,7 +126,6 @@ export class UsersController {
   }
   /* #endregion */
 
-  //DONE
   /* #region  - Delete user */
   @del('/users/{id}')
   @response(204, {
@@ -118,9 +136,9 @@ export class UsersController {
   }
   /* #endregion */
 
-  //DONE
   /* #region  - Register */
-  @post('/register')
+  @authenticate.skip()
+  @post('/users/register')
   @response(200, {
     description: 'Register',
     content: {
@@ -159,7 +177,8 @@ export class UsersController {
   }
   /* #endregion */
 
-  //login
+  /* #region  - Login */
+  @authenticate.skip()
   @post('/users/login')
   @response(200, {
     description: 'Token',
@@ -209,6 +228,5 @@ export class UsersController {
     const token = await this.jwtService.generateToken(user1);
     return {token};
   }
-
-  //get user logged in object
+  /* #endregion */
 }

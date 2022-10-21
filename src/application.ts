@@ -1,6 +1,7 @@
 import {AuthenticationComponent} from '@loopback/authentication';
 import {
   JWTAuthenticationComponent,
+  TokenServiceBindings,
   UserServiceBindings,
 } from '@loopback/authentication-jwt';
 import {BootMixin} from '@loopback/boot';
@@ -51,6 +52,7 @@ export class LoopBackApp extends BootMixin(
     this.component(AuthenticationComponent);
     this.component(JWTAuthenticationComponent);
     this.dataSource(DbDataSource, UserServiceBindings.DATASOURCE_NAME);
+    this.bind(TokenServiceBindings.TOKEN_SECRET).to('apple'); //TODO create test for this and env
     // ------------- END OF SNIPPET -------------
   }
 }
