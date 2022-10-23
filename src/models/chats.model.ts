@@ -11,10 +11,15 @@ export class Chats extends Entity {
   @property({
     type: 'number',
     id: true,
-    generated: false,
-    required: true,
+    generated: true,
   })
   id: number;
+
+  @property({
+    type: 'number',
+    required: true,
+  })
+  userId: number;
 
   @property({
     type: 'string',

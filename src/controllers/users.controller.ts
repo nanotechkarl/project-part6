@@ -13,10 +13,8 @@ import {
   param,
   post,
   put,
-  Request,
   requestBody,
   response,
-  RestBindings,
 } from '@loopback/rest';
 import {SecurityBindings, securityId, UserProfile} from '@loopback/security';
 import {Users} from '../models';
@@ -29,7 +27,7 @@ const requestBodySchema = {
     content: {
       'application/json': {
         schema: getModelSchemaRef(Users, {
-          exclude: ['id'], //REVIEW schema exclusion
+          exclude: ['id'],
         }),
       },
     },
@@ -38,7 +36,16 @@ const requestBodySchema = {
     content: {
       'application/json': {
         schema: getModelSchemaRef(Users, {
-          exclude: ['id', 'fullName'], //REVIEW schema exclusion
+          exclude: ['id', 'fullName'],
+        }),
+      },
+    },
+  },
+  update: {
+    content: {
+      'application/json': {
+        schema: getModelSchemaRef(Users, {
+          exclude: ['id', 'password'],
         }),
       },
     },
@@ -86,20 +93,30 @@ const responseSchema = {
     content: {
       'application/json': {
         schema: getModelSchemaRef(Users, {
-          exclude: ['id', 'password'], //REVIEW schema exclusion
+          exclude: ['id', 'password'],
         }),
       },
     },
   },
   delete: {
     description: 'Users DELETE success',
+    content: {
+      'application/json': {
+        schema: {
+          type: 'object',
+          properties: {
+            count: {type: 'number'},
+          },
+        },
+      },
+    },
   },
   register: {
     description: 'Register',
     content: {
       'application/json': {
         schema: getModelSchemaRef(Users, {
-          exclude: ['id'], //REVIEW schema exclusion
+          exclude: ['id'],
         }),
       },
     },
@@ -122,9 +139,9 @@ const responseSchema = {
 };
 
 /* #endregion */
-
 @authenticate('jwt')
 export class UsersController {
+  /* #region  - Constructor */
   constructor(
     @inject(TokenServiceBindings.TOKEN_SERVICE)
     public jwtService: TokenService,
@@ -134,8 +151,8 @@ export class UsersController {
     public user: UserProfile,
     @repository(UsersRepository)
     protected usersRepository: UsersRepository,
-    @inject(RestBindings.Http.REQUEST) private request: Request,
   ) {}
+  /* #endregion */
 
   /* #region  - Get all users */
   @get('/users')
@@ -155,7 +172,7 @@ export class UsersController {
   }
   /* #endregion */
 
-  /* #region  - Get User logged in properties */
+  /* #region  - Get user logged in properties */
   @get('/users/property')
   @response(200, responseSchema.getUserLoggedIn)
   async whoAmI(): Promise<Users> {
@@ -170,15 +187,7 @@ export class UsersController {
   @response(204, responseSchema.update)
   async replaceById(
     @param.path.number('id') id: number,
-    @requestBody({
-      content: {
-        'application/json': {
-          schema: getModelSchemaRef(Users, {
-            exclude: ['id', 'password'], //REVIEW schema exclusion
-          }),
-        },
-      },
-    })
+    @requestBody(requestBodySchema.update)
     users: Users,
   ): Promise<void> {
     await this.usersRepository.updateById(id, users);
