@@ -9,12 +9,18 @@ import {Entity, model, property} from '@loopback/repository';
 })
 export class Uploads extends Entity {
   @property({
+    type: 'object',
+    id: true,
+    generated: true,
+  })
+  id?: Object;
+
+  @property({
     type: 'number',
     id: true,
-    generated: false,
     required: true,
   })
-  id: number;
+  userId: number;
 
   @property({
     type: 'string',
@@ -38,7 +44,7 @@ export class Uploads extends Entity {
     type: 'array',
     itemType: 'object',
   })
-  sharedTo?: object[];
+  sharedTo: {userId: number}[];
 
   constructor(data?: Partial<Uploads>) {
     super(data);

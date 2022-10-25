@@ -9,11 +9,11 @@ import {Entity, model, property} from '@loopback/repository';
 })
 export class Chats extends Entity {
   @property({
-    type: 'number',
+    type: 'object',
     id: true,
     generated: true,
   })
-  id: number;
+  id: object;
 
   @property({
     type: 'number',
